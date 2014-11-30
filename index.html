@@ -1,10 +1,166 @@
-<!DOCTYPE html>
-<html>
-<head lang="en">
-    <meta charset="UTF-8">
-    <title></title>
+<!doctype html>
+<html class="no-js" lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Foundation | Welcome</title>
+    <link rel="stylesheet" href="css/foundation.css" />
+    <link rel="stylesheet" href="css/style.css" />
+    <script src="js/vendor/modernizr.js"></script>
 </head>
 <body>
+<div class="row">
+    <div class="large-12 columns">
+        <h1>SmartHouse Prototype</h1>
+        <h2>Controlar</h2>
+        <div class="switch large">
+            <input id="luz" type="checkbox">
+            <label for="luz">Luz</label>
+        </div>
+        <h2>Histórico</h2>
+        <h3>Recente</h3>
+        <table id="ultimosStatusDeLuz" width="100%">
+            <thead>
+            <tr>
+                <th>Data / Hora</th>
+                <th>Ação</th>
+                <th>IP</th>
+            </tr>
+            </thead>
+            <tbody>
+            </tbody>
+        </table>
+        <h3>Antigo</h3>
 
+        <dl class="accordion" data-accordion>
+            <dd class="accordion-navigation">
+                <a href="#maisHistorico">Visualizar</a>
+                <div id="maisHistorico" class="content">
+                    <table id="historicoStatusDeLuz" width="100%">
+                        <thead>
+                        <tr>
+                            <th>Data / Hora</th>
+                            <th>Ação</th>
+                            <th>IP</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        </tbody>
+                    </table>
+                </div>
+            </dd>
+        </dl>
+        <div class="clear"></div>
+        <div class="clear"></div>
+        <div class="clear"></div>
+        <div class="clear"></div>
+        <div class="clear"></div>
+    </div>
+</div>
+<script src="js/vendor/jquery.js"></script>
+<script src="js/foundation.min.js"></script>
+<script>
+    var DATA_TYPE = "json"
+    $(document).foundation();
+
+    function FormatarDataHora(date) {
+        date = new Date(date);
+        var hours = date.getHours();
+        var minutes = date.getMinutes();
+        var seconds = date.getSeconds();
+        minutes = minutes < 10 ? '0'+minutes : minutes;
+        seconds = seconds < 10 ? '0'+seconds : seconds;
+        var strTime = hours + ':' + minutes + ':' + seconds;
+        return date.getDate() + "/" + (date.getMonth()+1) + "/" + date.getFullYear() + "  " + strTime;
+    }
+
+    function renderizarStatusLuz(status){
+        var html;
+        if (status){
+            html = '<span class="label success">ACENDEU</span>'
+        }
+        else{
+            html = '<span class="label">APAGOU</span>'
+        }
+        return html
+    }
+    function renderizarUltimosStatusDeLuz(data){
+        var html = "";
+        var html_antigo = "";
+        var lista = data.lista;
+        for (i in lista){
+            if (i < 10){
+                html += '<tr><td>'+FormatarDataHora(lista[i]['data'])+'</td><td>'+renderizarStatusLuz(lista[i]['status'])+'</td><td>'+lista[i]['ip']+'</td></tr>';
+            }
+            else{
+                html_antigo += '<tr><td>'+FormatarDataHora(lista[i]['data'])+'</td><td>'+renderizarStatusLuz(lista[i]['status'])+'</td><td>'+lista[i]['ip']+'</td></tr>';
+            }
+
+        }
+        $("#ultimosStatusDeLuz tbody").html(html);
+        $("#historicoStatusDeLuz tbody").html(html_antigo);
+    }
+    function atualizarUltimosStatisDeLuz(){
+        $.ajax({
+            type: "post",
+            url: "api/ultimosStatusLuz.php",
+            success: function(data){
+                renderizarUltimosStatusDeLuz(data);
+            },
+            dataType: DATA_TYPE,
+            cache: false
+        });
+    }
+    function atualizarBotaoLuz(){
+        $.ajax({
+            type: "post",
+            url: "api/ultimoStatusLuz.php",
+            success: function(data){
+                if(data["status"]){
+                    $("input#luz").prop('checked', true);
+                }else{
+                    $("input#luz").prop('checked', false);
+                }
+            },
+            dataType: DATA_TYPE,
+            cache: false
+        });
+    }
+    $(document).ready(function(){
+        atualizarUltimosStatisDeLuz();
+        setInterval(function(){
+            atualizarBotaoLuz();
+            atualizarUltimosStatisDeLuz();
+            console.log("Atualizou interface!")
+        }, 1000);
+    });
+    $("#luz").click(function(){
+        if ($('#luz').prop('checked')){
+            console.log("Acendeu luz");
+            $.ajax({
+                type: "POST",
+                url: "api/acenderLuz.php",
+                success: function(){
+                    console.log("apertou");
+                    atualizarUltimosStatisDeLuz();
+                },
+                dataType: DATA_TYPE,
+                cache: false
+            });
+        }
+        else{
+            console.log("Apagou luz");
+            $.ajax({
+                type: "POST",
+                url: "api/apagarLuz.php",
+                success: function(){
+                    atualizarUltimosStatisDeLuz();
+                },
+                dataType: DATA_TYPE,
+                cache: false
+            });
+        }
+    });
+</script>
 </body>
 </html>

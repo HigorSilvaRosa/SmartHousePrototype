@@ -1,12 +1,15 @@
 <?php
-require_once("libs/rb.php");
-R::setup('sqlite:smart_house.sqlite');
-$luz = R::findLast("luz");
-$response = null;
-$response["ok"] = false;
-if($luz){
-    $response["status"] = (boolean) $luz->status;
-    $response["data"] = $luz->data;
-    $response["ok"] = true;
+require_once("base.php");
+$ultimos_status = R::findAll("luz");
+$response = array();
+$response["ok"] = true;
+$lista = array();
+foreach ($ultimos_status as $luz){
+    $status =  array();
+    $status["status"] = (boolean) $luz->status;
+    $status["data"] = $luz->data;
+    $status["ip"] = $luz->ip;
+    array_push($lista, $status);
 }
+$response["lista"] = array_reverse($lista);
 echo json_encode($response);
